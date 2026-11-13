@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import BenefitCard from '../components/benefit/BenefitCard'
 import CategoryChips from '../components/benefit/CategoryChips'
+import InfiniteScrollTrigger from '../components/common/InfiniteScrollTrigger'
 import { SORT_LABELS } from '../constants/benefit'
 import { useBenefitList } from '../hooks/useBenefitList'
 import type { BenefitCategory, BenefitSort } from '../types/benefit'
@@ -9,7 +10,11 @@ export default function HomePage() {
     const [categories, setCategories] = useState<BenefitCategory[]>([])
     const [sort, setSort] = useState<BenefitSort>('DEADLINE')
 
-    const { data, isPending, isError, refetch } = useBenefitList({ category: categories, sort })
+    const { data, isPending, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+        useBenefitList({ category: categories, sort })
+
+    const benefits = data ? data.pages.flatMap((page) => page.items) : []
+    const totalElements = data ? data.pages[0].totalElements : 0
 
     return (
         <main className="px-4 py-5">
@@ -20,9 +25,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                    진행 중인 혜택 {data ? data.totalElements : 0}건
-                </p>
+                <p className="text-sm text-gray-500">진행 중인 혜택 {totalElements}건</p>
                 <select
                     value={sort}
                     onChange={(event) => setSort(event.target.value as BenefitSort)}
@@ -52,18 +55,29 @@ export default function HomePage() {
                     </div>
                 )}
 
-                {data && data.items.length === 0 && (
+                {data && benefits.length === 0 && (
                     <p className="py-10 text-center text-sm text-gray-400">조건에 맞는 혜택이 없어요.</p>
                 )}
 
-                {data && data.items.length > 0 && (
-                    <ul className="flex flex-col gap-3">
-                        {data.items.map((benefit) => (
-                            <li key={benefit.benefitId}>
-                                <BenefitCard benefit={benefit} />
-                            </li>
-                        ))}
-                    </ul>
+                {benefits.length > 0 && (
+                    <>
+                        <ul className="flex flex-col gap-3">
+                            {benefits.map((benefit) => (
+                                <li key={benefit.benefitId}>
+                                    <BenefitCard benefit={benefit} />
+                                </li>
+                            ))}
+                        </ul>
+
+                        <InfiniteScrollTrigger
+                            onIntersect={fetchNextPage}
+                            disabled={!hasNextPage || isFetchingNextPage}
+                        />
+
+                        {isFetchingNextPage && (
+                            <p className="py-4 text-center text-sm text-gray-400">더 불러오는 중...</p>
+                        )}
+                    </>
                 )}
             </section>
         </main>
