@@ -19,7 +19,7 @@ public record TargetCondition(
     }
 
     // 아무 조건도 없는지 확인
-    public boolean isUnrestricted() {
+    public boolean hasNoRestriction() {
         return ageMin == null
                 && ageMax == null
                 && regions.isEmpty()
