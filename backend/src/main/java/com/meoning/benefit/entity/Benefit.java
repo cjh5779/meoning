@@ -10,12 +10,15 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Table(name = "benefits")
 public class Benefit extends BaseEntity {
+
+    private static final int DEADLINE_SOON_DAYS = 3;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -107,5 +110,23 @@ public class Benefit extends BaseEntity {
             benefit.status = status;
         }
         return benefit;
+    }
+
+    public Integer dDay(LocalDate today) {
+        if (endDate == null) {
+            return null;
+        }
+
+        return (int) ChronoUnit.DAYS.between(today, endDate);
+    }
+
+    public boolean isDeadlineSoon(LocalDate today) {
+        Integer dDay = dDay(today);
+
+        return dDay != null && dDay >= 0 && dDay <=DEADLINE_SOON_DAYS;
+    }
+
+    public boolean isExpired(LocalDate today) {
+        return endDate != null && endDate.isBefore(today);
     }
 }
